@@ -187,7 +187,7 @@ const Gallery = () => {
 <section className="section-padding bg-gray-100">
   <div className="container-custom text-center">
     <h2 className="font-display text-4xl md:text-5xl font-semibold mb-6 text-foreground">
-      Découvrez Dar Seif en vidéo
+      Découvrez Dar B&B en vidéo
     </h2>
     <p className="font-body text-muted-foreground mb-8 max-w-2xl mx-auto">
       Plongez dans l’ambiance unique de notre maison d’hôtes et de sa région.
