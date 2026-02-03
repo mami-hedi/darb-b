@@ -93,7 +93,8 @@ export function AdminReservations() {
   const fetchReservations = async () => {
   setLoading(true);
   try {
-    const res = await fetch(${BACKEND_URL}/api/admin/reservations);
+    // ✅ Utilisation impérative des backticks pour interpréter ${BACKEND_URL}
+    const res = await fetch(`${BACKEND_URL}/api/admin/reservations`);
     const data: Reservation[] = await res.json();
 
     // 🔥 Trier par date de création (latest first)
@@ -115,7 +116,7 @@ export function AdminReservations() {
 
   const fetchRooms = async () => {
     try {
-      const res = await fetch(${BACKEND_URL}/api/rooms);
+      const res = await fetch(`${BACKEND_URL}/api/rooms`);
       if (!res.ok) throw new Error("Erreur chargement chambres");
       const data = await res.json();
       setRooms(data);
@@ -214,11 +215,12 @@ useEffect(() => {
 
   const handleStatusChange = async (id: number, status: Reservation["status"]) => {
     try {
-      const res = await fetch(${BACKEND_URL}/api/admin/reservations/${id}/status, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
+    // ✅ Ajout des backticks autour de l'URL
+    const res = await fetch(`${BACKEND_URL}/api/admin/reservations/${id}/status`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
       if (!res.ok) throw new Error("Erreur serveur");
       toast({ title: "Succès", description: "Statut mis à jour" });
       fetchReservations();
@@ -234,7 +236,7 @@ useEffect(() => {
   const handleDeleteReservation = async (id: number) => {
     if (!confirm("Voulez-vous vraiment supprimer cette réservation ?")) return;
     try {
-      const res = await fetch(${BACKEND_URL}/api/admin/reservations/${id}, { method: "DELETE" });
+      const res = await fetch(`${BACKEND_URL}/api/admin/reservations/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Erreur suppression");
       toast({ title: "Succès", description: "Réservation supprimée" });
       fetchReservations();

@@ -1,4 +1,3 @@
-// src/components/Sidebar.tsx
 import { useState } from "react";
 import { FaTachometerAlt, FaUser, FaCalendarAlt, FaSignOutAlt, FaMoneyBillWave } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
