@@ -20,10 +20,12 @@ interface Room {
   image?: string;
   description?: string;
 }
-const BACKEND_URL = "http://localhost:3000";
+
+// 1. On utilise la variable d'environnement ou l'URL de Render par défaut
+const BACKEND_URL = import.meta.env.VITE_API_URL || "https://darb-b.onrender.com";
 
 /* =======================
-   Component
+    Component
 ======================= */
 const Rooms = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -31,7 +33,8 @@ const Rooms = () => {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:3000/api/rooms")
+    // 2. On utilise BACKEND_URL ici aussi au lieu de localhost
+    fetch(`${BACKEND_URL}/api/rooms`)
       .then((res) => {
         if (!res.ok) throw new Error("Erreur chargement chambres");
         return res.json();

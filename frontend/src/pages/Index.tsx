@@ -15,6 +15,8 @@ interface Room {
   image?: string;
 }
 
+const BACKEND_URL = import.meta.env.VITE_API_URL || "https://darb-b.onrender.com";
+
 const Index = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +24,7 @@ const Index = () => {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const res = await fetch("http://localhost:3000/api/rooms");
+        const res = await fetch(`${BACKEND_URL}/api/rooms`);
         if (!res.ok) throw new Error("Erreur chargement chambres");
         const data: Room[] = await res.json();
         setRooms(data.slice(0, 3)); // comme la maquette
@@ -177,7 +179,7 @@ const Index = () => {
                     <img
                       src={
                         room.image
-                          ? `http://localhost:3000${room.image}`
+                          ? `${BACKEND_URL}${room.image}`
                           : "/placeholder-room.jpg"
                       }
                       alt={room.name}
