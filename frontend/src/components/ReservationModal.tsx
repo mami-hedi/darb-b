@@ -146,26 +146,24 @@ export function ReservationModal({ room, children }: ReservationModalProps) {
 
     setIsSubmitting(true);
 
-    const checkin = formatDateLocal(checkinDate);
-    const checkout = formatDateLocal(checkoutDate);
+    // Assure-toi que ces fonctions retournent YYYY-MM-DD
+const checkin = checkinDate.toISOString().split('T')[0];
+const checkout = checkoutDate.toISOString().split('T')[0];
 
-    try {
-      // ✅ CORRECTION DU POST RÉSERVATION
-      const res = await fetch(`${BACKEND_URL}/api/reservations`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          room_id: room.id,
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          checkin,
-          checkout,
-          nights,
-          total,
-          message: formData.message,
-        }),
-      });
+try {
+  const res = await fetch(`${BACKEND_URL}/api/reservations`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      room_id: Number(room.id), // ✅ Doit être un nombre
+      name: formData.name,      // ✅ 'name' et non 'guest_name'
+      email: formData.email,
+      phone: formData.phone || null,
+      checkin: checkin,         // ✅ 'checkin' et non 'check_in'
+      checkout: checkout,       // ✅ 'checkout' et non 'check_out'
+      message: formData.message || null,
+    }),
+  });
 
       const data = await res.json();
 
