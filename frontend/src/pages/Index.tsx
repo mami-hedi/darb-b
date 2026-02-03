@@ -191,7 +191,7 @@ const Index = () => {
                       {room.name}
                     </h3>
                     <p className="text-muted-foreground">
-                      {room.price}€ / nuit
+                      {room.price}DT / nuit
                     </p>
                   </div>
                 </Link>
