@@ -8,8 +8,9 @@ export const getReservations = async () => {
 };
 
 // Créer une réservation
-export const createReservation = async (reservation: Reservation) => {
-  const { room_id, 
+export const createReservation = async (reservation: any) => {
+  const { 
+    room_id, 
     name, 
     email, 
     phone, 
@@ -17,7 +18,8 @@ export const createReservation = async (reservation: Reservation) => {
     checkout, 
     message, 
     nights, 
-    total } = reservation;
+    total 
+  } = reservation;
 
   // Vérifier que la date de départ est après la date d'arrivée
   if (new Date(checkout) <= new Date(checkin)) {
