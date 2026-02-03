@@ -45,7 +45,7 @@ export const createReservation = async (reservation: Reservation) => {
     `INSERT INTO reservations 
      (room_id, name, email, phone, checkin, checkout, message, status)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [room_id, name, email, phone || null, checkin, checkout, message || null, 'en attente']
+    [room_id, name, email, phone || null, checkin, checkout, message || null, 'pending']
   );
 
   return result.insertId;
