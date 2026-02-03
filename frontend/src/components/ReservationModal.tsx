@@ -26,6 +26,8 @@ export function ReservationModal({ room, children }: ReservationModalProps) {
   const { toast } = useToast();
   const { t } = useTranslation();
 
+  const BACKEND_URL = import.meta.env.VITE_API_URL || "https://darb-b.onrender.com";
+
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -53,12 +55,14 @@ export function ReservationModal({ room, children }: ReservationModalProps) {
     if (checkout) setCheckoutDate(new Date(checkout));
   }, []);
 
+  // ✅ CORRECTION DU FETCH DISPONIBILITÉS (useEffect)
   useEffect(() => {
-    fetch(`http://localhost:3000/api/reservations/days/${room.id}`)
+    // Utilisation des backticks ` `
+    fetch(`${BACKEND_URL}/api/reservations/days/${room.id}`)
       .then((res) => res.json())
       .then((data) => setAvailability(data.reservedDays))
       .catch(console.error);
-  }, [room.id]);
+  }, [room.id, BACKEND_URL]);
 
   useEffect(() => {
     if (checkinDate && checkoutDate) {
@@ -146,7 +150,8 @@ export function ReservationModal({ room, children }: ReservationModalProps) {
     const checkout = formatDateLocal(checkoutDate);
 
     try {
-      const res = await fetch("http://localhost:3000/api/reservations", {
+      // ✅ CORRECTION DU POST RÉSERVATION
+      const res = await fetch(`${BACKEND_URL}/api/reservations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

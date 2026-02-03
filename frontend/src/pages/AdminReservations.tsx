@@ -84,6 +84,8 @@ export function AdminReservations() {
     payment_status: "unpaid",
     advance_amount: 0,
   });
+ 
+ const BACKEND_URL = import.meta.env.VITE_API_URL || "https://darb-b.onrender.com";
 
   const [sortKey, setSortKey] = useState<SortKey>("checkin");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
@@ -91,7 +93,7 @@ export function AdminReservations() {
   const fetchReservations = async () => {
   setLoading(true);
   try {
-    const res = await fetch("http://localhost:3000/api/admin/reservations");
+    const res = await fetch(${BACKEND_URL}/api/admin/reservations);
     const data: Reservation[] = await res.json();
 
     // 🔥 Trier par date de création (latest first)
@@ -113,7 +115,7 @@ export function AdminReservations() {
 
   const fetchRooms = async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/rooms");
+      const res = await fetch(${BACKEND_URL}/api/rooms);
       if (!res.ok) throw new Error("Erreur chargement chambres");
       const data = await res.json();
       setRooms(data);
@@ -139,7 +141,7 @@ export function AdminReservations() {
   fetchReservations();
   fetchRooms();
 
-  const socket = io("http://localhost:3000");
+  const socket = io(BACKEND_URL);
 
   socket.on("reservationUpdated", () => {
     fetchReservations();
@@ -212,7 +214,7 @@ useEffect(() => {
 
   const handleStatusChange = async (id: number, status: Reservation["status"]) => {
     try {
-      const res = await fetch(`http://localhost:3000/api/admin/reservations/${id}/status`, {
+      const res = await fetch(${BACKEND_URL}/api/admin/reservations/${id}/status, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -232,7 +234,7 @@ useEffect(() => {
   const handleDeleteReservation = async (id: number) => {
     if (!confirm("Voulez-vous vraiment supprimer cette réservation ?")) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/admin/reservations/${id}`, { method: "DELETE" });
+      const res = await fetch(${BACKEND_URL}/api/admin/reservations/${id}, { method: "DELETE" });
       if (!res.ok) throw new Error("Erreur suppression");
       toast({ title: "Succès", description: "Réservation supprimée" });
       fetchReservations();
@@ -389,17 +391,20 @@ const isPastDate = (dateStr: string) => {
   }
 
   try {
-    const url = editingReservation
-      ? `http://localhost:3000/api/admin/reservations/${editingReservation.id}`
-      : "http://localhost:3000/api/admin/reservations";
+  // ✅ Remplacement de localhost par BACKEND_URL
+  const url = editingReservation
+    ? `${BACKEND_URL}/api/admin/reservations/${editingReservation.id}`
+    : `${BACKEND_URL}/api/admin/reservations`;
 
-    const method = editingReservation ? "PUT" : "POST";
+  const method = editingReservation ? "PUT" : "POST";
 
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
+  const res = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(formData),
+  });
+  
+  // ... reste de ton code (gestion de res.ok, toast, etc.)
 
     if (!res.ok) {
       const errorData = await res.json();

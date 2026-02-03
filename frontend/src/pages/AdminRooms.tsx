@@ -46,7 +46,8 @@ export function AdminRooms() {
   const [priceInput, setPriceInput] = useState(0);
   const [sizeInput, setSizeInput] = useState(0);
   const [isActiveInput, setIsActiveInput] = useState(true);
-
+   
+   const BACKEND_URL = import.meta.env.VITE_API_URL || "https://darb-b.onrender.com";
 
   const [capacityInput, setCapacityInput] = useState(1);
   const [imageInput, setImageInput] = useState<File | null>(null);
@@ -55,40 +56,51 @@ export function AdminRooms() {
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [newGalleryFiles, setNewGalleryFiles] = useState<FileList | null>(null);
 
-  // 🔹 Fetch rooms
-  const fetchRooms = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("http://localhost:3000/api/admin/rooms");
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setRooms(data);
-    } catch {
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les chambres",
-        variant: "destructive",
-      });
-    }
-    setLoading(false);
-  };
+ // 🔹 Fetch rooms
+const fetchRooms = async () => {
+  setLoading(true);
+  try {
+    // ✅ Utilisation des backticks ` ` pour injecter la variable BACKEND_URL
+    const res = await fetch(`${BACKEND_URL}/api/admin/rooms`);
+    
+    if (!res.ok) throw new Error("Erreur réseau");
+    
+    const data = await res.json();
+    setRooms(data);
+  } catch (error) {
+    toast({
+      title: "Erreur",
+      description: "Impossible de charger les chambres depuis le serveur Render",
+      variant: "destructive",
+    });
+  }
+  setLoading(false);
+};
 
-  useEffect(() => {
-    fetchRooms();
-  }, []);
-
-  // 🔹 Fetch galerie
-  const fetchGallery = async (roomId: number) => {
-    try {
-      const res = await fetch(`http://localhost:3000/api/admin/gallery/${roomId}`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setGallery(data);
-    } catch (err) {
-      console.error(err);
-      setGallery([]);
-    }
-  };
+useEffect(() => {
+  fetchRooms();
+}, []);
+  
+// 🔹 Fetch galerie
+const fetchGallery = async (roomId: number) => {
+  try {
+    // ✅ Utilisation des backticks ` ` pour que ${} fonctionne
+    const res = await fetch(`${BACKEND_URL}/api/admin/gallery/${roomId}`);
+    
+    if (!res.ok) throw new Error("Erreur lors du chargement de la galerie");
+    
+    const data = await res.json();
+    setGallery(data);
+  } catch (err) {
+    console.error("Erreur galerie:", err);
+    setGallery([]);
+    toast({
+      title: "Galerie",
+      description: "Impossible de charger les images de la galerie.",
+      variant: "destructive",
+    });
+  }
+};
 
   // 🔹 Open form
   const openForm = (room?: Room) => {
@@ -119,13 +131,15 @@ export function AdminRooms() {
   };
 
   // 🔹 Save room (CREATE / UPDATE)
-  const handleSaveRoom = async (e: React.FormEvent) => {
+  // 🔹 Save room (CREATE / UPDATE)
+const handleSaveRoom = async (e: React.FormEvent) => {
   e.preventDefault();
 
   try {
+    // ✅ Utilisation impérative des backticks ` ` pour interpréter les variables
     const url = editingRoom
-      ? `http://localhost:3000/api/admin/rooms/${editingRoom.id}`
-      : "http://localhost:3000/api/admin/rooms";
+      ? `${BACKEND_URL}/api/admin/rooms/${editingRoom.id}`
+      : `${BACKEND_URL}/api/admin/rooms`;
 
     const method = editingRoom ? "PUT" : "POST";
 
@@ -136,7 +150,7 @@ export function AdminRooms() {
     formData.append("price", String(priceInput));
     formData.append("size", String(sizeInput));
     formData.append("capacity", String(capacityInput));
-    formData.append("is_active", isActiveInput ? "1" : "0"); // ✅ ICI
+    formData.append("is_active", isActiveInput ? "1" : "0");
 
     if (imageInput) {
       formData.append("image", imageInput);
@@ -144,7 +158,7 @@ export function AdminRooms() {
 
     const res = await fetch(url, {
       method,
-      body: formData,
+      body: formData, // Pas besoin de headers "Content-Type", le navigateur le fait seul pour FormData
     });
 
     if (!res.ok) {
@@ -154,9 +168,7 @@ export function AdminRooms() {
 
     toast({
       title: "Succès",
-      description: editingRoom
-        ? "Chambre modifiée"
-        : "Chambre ajoutée",
+      description: editingRoom ? "Chambre modifiée" : "Chambre ajoutée",
     });
 
     setFormOpen(false);
@@ -172,59 +184,101 @@ export function AdminRooms() {
 
 
   // 🔹 Delete room
-  const handleDeleteRoom = async (id: number) => {
-    if (!confirm("Supprimer cette chambre ?")) return;
+const handleDeleteRoom = async (id: number) => {
+  if (!confirm("Voulez-vous vraiment supprimer cette chambre ? Cette action est irréversible.")) return;
 
-    try {
-      const res = await fetch(
-        `http://localhost:3000/api/admin/rooms/${id}`,
-        { method: "DELETE" }
-      );
-      if (!res.ok) throw new Error();
-      toast({ title: "Succès", description: "Chambre supprimée" });
-      fetchRooms();
-    } catch {
-      toast({
-        title: "Erreur",
-        description: "Suppression impossible",
-        variant: "destructive",
-      });
+  try {
+    // ✅ Utilisation des BACKTICKS (touches AltGr + 7 ou touche sous Échap)
+    const res = await fetch(
+      `${BACKEND_URL}/api/admin/rooms/${id}`, 
+      { method: "DELETE" }
+    );
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || "Erreur lors de la suppression");
     }
-  };
+
+    toast({ title: "Succès", description: "Chambre supprimée avec succès" });
+    fetchRooms(); // Rafraîchit la liste
+  } catch (error: any) {
+    toast({
+      title: "Erreur",
+      description: error.message || "Suppression impossible",
+      variant: "destructive",
+    });
+  }
+};
 
 
 
 
   // 🔹 Upload nouvelles images de galerie
-  const handleUploadGallery = async () => {
-    if (!editingRoom || !newGalleryFiles) return;
-    const formData = new FormData();
-    Array.from(newGalleryFiles).forEach((f) => formData.append("images", f));
-    try {
-      const res = await fetch(
-        `http://localhost:3000/api/admin/gallery/${editingRoom.id}`,
-        { method: "POST", body: formData }
-      );
-      if (!res.ok) throw new Error();
-      fetchGallery(editingRoom.id);
-      setNewGalleryFiles(null);
-      toast({ title: "Succès", description: "Galerie mise à jour" });
-    } catch (err: any) {
-      toast({ title: "Erreur", description: err.message, variant: "destructive" });
-    }
-  };
+const handleUploadGallery = async () => {
+  if (!editingRoom || !newGalleryFiles) return;
+  
+  const formData = new FormData();
+  Array.from(newGalleryFiles).forEach((f) => formData.append("images", f));
+  
+  try {
+    // ✅ Utilisation de BACKEND_URL pour le serveur Render
+    const res = await fetch(
+      `${BACKEND_URL}/api/admin/gallery/${editingRoom.id}`,
+      { 
+        method: "POST", 
+        body: formData 
+      }
+    );
+    
+    if (!res.ok) throw new Error("Erreur lors de l'envoi des images");
+    
+    fetchGallery(editingRoom.id);
+    setNewGalleryFiles(null);
+    
+    // On réinitialise l'input file visuellement
+    const fileInput = document.querySelector('input[type="file"][multiple]') as HTMLInputElement;
+    if (fileInput) fileInput.value = "";
+
+    toast({ title: "Succès", description: "Galerie mise à jour" });
+  } catch (err: any) {
+    toast({ 
+      title: "Erreur", 
+      description: err.message || "Impossible d'uploader les images", 
+      variant: "destructive" 
+    });
+  }
+};
  
 
   // 🔹 Supprimer image galerie
-  const handleDeleteGallery = async (id: number) => {
-    try {
-      await fetch(`http://localhost:3000/api/admin/gallery/${id}`, { method: "DELETE" });
-      if (editingRoom) fetchGallery(editingRoom.id);
-      toast({ title: "Succès", description: "Image supprimée" });
-    } catch {
-      toast({ title: "Erreur", description: "Suppression impossible", variant: "destructive" });
+const handleDeleteGallery = async (id: number) => {
+  if (!confirm("Voulez-vous vraiment supprimer cette image de la galerie ?")) return;
+
+  try {
+    // ✅ Utilisation de BACKEND_URL pour Render
+    const res = await fetch(`${BACKEND_URL}/api/admin/gallery/${id}`, { 
+      method: "DELETE" 
+    });
+
+    if (!res.ok) throw new Error("Erreur lors de la suppression");
+
+    // Rafraîchir la galerie si on est toujours sur la même chambre
+    if (editingRoom) {
+      fetchGallery(editingRoom.id);
     }
-  };
+
+    toast({ 
+      title: "Succès", 
+      description: "Image supprimée avec succès" 
+    });
+  } catch (err) {
+    toast({ 
+      title: "Erreur", 
+      description: "Impossible de supprimer l'image du serveur", 
+      variant: "destructive" 
+    });
+  }
+};
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -368,16 +422,17 @@ export function AdminRooms() {
   </div>
 
               {/* 🔹 Image actuelle */}
-              {editingRoom?.image && (
-                <div>
-                  <Label>Image actuelle</Label>
-                  <img
-                    src={`http://localhost:3000${editingRoom.image}`}
-                    alt="Image actuelle"
-                    className="mt-2 h-32 w-3/4 object-cover rounded-lg border"
-                  />
-                </div>
-              )}
+{editingRoom?.image && (
+  <div>
+    <Label>Image actuelle</Label>
+    <img
+      // ✅ On remplace http://localhost:3000 par ${BACKEND_URL}
+      src={`${BACKEND_URL}${editingRoom.image}`}
+      alt="Image actuelle"
+      className="mt-2 h-32 w-3/4 object-cover rounded-lg border"
+    />
+  </div>
+)}
 
               <div>
                 <Label>Image</Label>
@@ -398,26 +453,29 @@ export function AdminRooms() {
                 />
               </div>
 
-              {/* 🔹 Galerie */}
-              <div className="mt-4">
-                <Label>Galerie</Label>
-                <div className="grid grid-cols-3 gap-2 mt-2">
-                  {gallery.map((img) => (
-                    <div key={img.id} className="relative">
-                      <img
-                        src={`http://localhost:3000${img.url}`}
-                        className="w-full h-24 object-cover rounded"
-                      />
-                      <button
-                        type="button"
-                        className="absolute top-1 right-1 bg-red-500 text-white px-1 rounded"
-                        onClick={() => handleDeleteGallery(img.id)}
-                      >
-                        X
-                      </button>
-                    </div>
-                  ))}
-                </div>
+             {/* 🔹 Galerie */}
+<div className="mt-4">
+  <Label>Galerie</Label>
+  <div className="grid grid-cols-3 gap-2 mt-2">
+    {gallery.map((img) => (
+      <div key={img.id} className="relative">
+        <img
+          // ✅ Remplacement de localhost par ${BACKEND_URL}
+          src={`${BACKEND_URL}${img.url}`}
+          className="w-full h-24 object-cover rounded"
+          alt="Galerie"
+        />
+        <button
+          type="button"
+          className="absolute top-1 right-1 bg-red-500 text-white px-1 rounded hover:bg-red-600 transition-colors"
+          onClick={() => handleDeleteGallery(img.id)}
+        >
+          X
+        </button>
+      </div>
+    ))}
+  </div>
+</div>
 
                 <Input
                   type="file"

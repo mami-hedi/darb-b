@@ -1,19 +1,25 @@
 import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+
+// ✅ Déclaration de l'URL dynamique
+const BACKEND_URL = import.meta.env.VITE_API_URL || "https://darb-b.onrender.com";
+
 interface Day {
   date: string;
   available: boolean;
 }
 
 const fetchDays = async (): Promise<Day[]> => {
-  const res = await fetch("http://localhost:3000/api/reservations/days?year=2025&month=2");
+  // ✅ URL dynamique avec backticks
+  const res = await fetch(`${BACKEND_URL}/api/reservations/days?year=2025&month=2`);
   if (!res.ok) throw new Error("Erreur lors du chargement des jours");
   return res.json();
 };
 
 const reserveDay = async (date: string) => {
-  const res = await fetch("http://localhost:3000/api/reservations/", {
+  // ✅ URL dynamique pour le POST
+  const res = await fetch(`${BACKEND_URL}/api/reservations/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ date }),

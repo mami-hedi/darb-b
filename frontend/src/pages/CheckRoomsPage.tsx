@@ -18,6 +18,8 @@ export default function CheckRoomsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const BACKEND_URL = import.meta.env.VITE_API_URL || "https://darb-b.onrender.com";
+
   const [selectedCheckin, setSelectedCheckin] = useState("");
   const [selectedCheckout, setSelectedCheckout] = useState("");
 
@@ -52,8 +54,9 @@ export default function CheckRoomsPage() {
     }
 
     try {
+      // ✅ Correction de l'URL avec BACKEND_URL et les backticks `
       const res = await fetch(
-        `http://localhost:3000/api/rooms/available?checkin=${checkin}&checkout=${checkout}`
+        `${BACKEND_URL}/api/rooms/available?checkin=${checkin}&checkout=${checkout}`
       );
 
       if (!res.ok) {
