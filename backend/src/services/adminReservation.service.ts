@@ -1,7 +1,6 @@
 import { db } from "../db";
 import { Reservation } from "../types";
 
-// 🔹 Récupérer toutes les réservations pour admin
 // 🔹 Récupérer toutes les réservations pour admin avec total et nights
 export const getAdminReservations = async () => {
   const [rows]: any = await db.query(`
@@ -11,7 +10,6 @@ export const getAdminReservations = async () => {
     ORDER BY r.checkin ASC
   `);
 
-  // Calculer nights et total
   return rows.map((r: any) => {
     const checkinDate = new Date(r.checkin);
     const checkoutDate = new Date(r.checkout);
@@ -29,13 +27,12 @@ export const getAdminReservations = async () => {
   });
 };
 
-
-// 🔹 Ajouter réservation ADMIN
+// 🔹 Ajouter réservation ADMIN (CORRIGÉ : Ajout de nights et total)
 export const addReservation = async (data: any) => {
   const sql = `
     INSERT INTO reservations
-    (room_id, name, email, phone, checkin, checkout, message, status, payment_status, advance_amount)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (room_id, name, email, phone, checkin, checkout, message, status, payment_status, advance_amount, nights, total)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const values = [
     data.room_id,
@@ -48,17 +45,19 @@ export const addReservation = async (data: any) => {
     data.status || "confirmed",
     data.payment_status || "unpaid",
     data.advance_amount || 0,
+    data.nights || 0, // ✅ Ajouté
+    data.total || 0,   // ✅ Ajouté
   ];
   const [result]: any = await db.query(sql, values);
   return { id: result.insertId, ...data };
 };
 
-// 🔹 Modifier réservation ADMIN
+// 🔹 Modifier réservation ADMIN (CORRIGÉ : Ajout de nights et total)
 export const editReservation = async (id: number, data: any) => {
   const sql = `
     UPDATE reservations SET
     room_id = ?, name = ?, email = ?, phone = ?, checkin = ?, checkout = ?, 
-    message = ?, status = ?, payment_status = ?, advance_amount = ?
+    message = ?, status = ?, payment_status = ?, advance_amount = ?, nights = ?, total = ?
     WHERE id = ?
   `;
   await db.query(sql, [
@@ -72,20 +71,18 @@ export const editReservation = async (id: number, data: any) => {
     data.status,
     data.payment_status || "unpaid",
     data.advance_amount || 0,
+    data.nights || 0, // ✅ Ajouté
+    data.total || 0,  // ✅ Ajouté
     id
   ]);
 };
 
 // 🔹 Modifier uniquement le statut
-// ❌ ERREUR ICI : Mauvaise syntaxe tagged template
-// ✅ CORRECTION :
 export const updateStatus = async (id: number, status: string) => {
   await db.query("UPDATE reservations SET status = ? WHERE id = ?", [status, id]);
 };
 
 // 🔹 Supprimer réservation
-// ❌ ERREUR ICI : Mauvaise syntaxe tagged template
-// ✅ CORRECTION :
 export const removeReservation = async (id: number) => {
   await db.query("DELETE FROM reservations WHERE id = ?", [id]);
 };
