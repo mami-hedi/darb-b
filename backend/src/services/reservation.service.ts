@@ -9,7 +9,15 @@ export const getReservations = async () => {
 
 // Créer une réservation
 export const createReservation = async (reservation: Reservation) => {
-  const { room_id, name, email, phone, checkin, checkout, message } = reservation;
+  const { room_id, 
+    name, 
+    email, 
+    phone, 
+    checkin, 
+    checkout, 
+    message, 
+    nights, 
+    total } = reservation;
 
   // Vérifier que la date de départ est après la date d'arrivée
   if (new Date(checkout) <= new Date(checkin)) {
@@ -43,9 +51,22 @@ export const createReservation = async (reservation: Reservation) => {
   // Insérer la réservation
   const [result]: any = await db.query(
     `INSERT INTO reservations 
-     (room_id, name, email, phone, checkin, checkout, message, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
-    [room_id, name, email, phone || null, checkin, checkout, message || null]
+     (room_id, name, email, phone, checkin, checkout, message, status, payment_status, advance_amount, nights, total)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')`,
+    [
+      room_id,
+      name,
+      email,
+      phone || null,
+      checkin,
+      checkout,
+      message || null,
+      'pending',      // status
+      'unpaid',       // payment_status (valeur par défaut logique)
+      0,              // advance_amount (0 par défaut)
+      nights || 1,    // nights
+      total || 0      // total
+    ]
   );
 
   return result.insertId;
