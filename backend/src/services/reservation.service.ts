@@ -50,24 +50,24 @@ export const createReservation = async (reservation: any) => {
     throw new Error("La chambre est déjà réservée pour ces dates.");
   }
 
-  // Insérer la réservation
+  /// ✅ CORRECTION SYNTAXE SQL
   const [result]: any = await db.query(
     `INSERT INTO reservations 
-     (room_id, name, email, phone, checkin, checkout, message, status, payment_status, advance_amount, nights, total)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')`,
+     (room_id, name, email, phone, checkin, checkout, message, status, payment_status, advance_amount, nights, total) 
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, // Exactement 12 points d'interrogation
     [
-      room_id,
-      name,
-      email,
-      phone || null,
-      checkin,
-      checkout,
-      message || null,
-      'pending',      // status
-      'unpaid',       // payment_status (valeur par défaut logique)
-      0,              // advance_amount (0 par défaut)
-      nights || 1,    // nights
-      total || 0      // total
+      room_id,                // 1
+      name,                   // 2
+      email,                  // 3
+      phone || null,          // 4
+      checkin,                // 5
+      checkout,               // 6
+      message || null,        // 7
+      'pending',              // 8 (status)
+      'unpaid',               // 9 (payment_status)
+      0,                      // 10 (advance_amount)
+      Number(nights) || 0,    // 11
+      Number(total) || 0      // 12
     ]
   );
 
