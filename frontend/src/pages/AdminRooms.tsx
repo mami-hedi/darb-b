@@ -280,250 +280,169 @@ const handleDeleteGallery = async (id: number) => {
   }
 };
 
-  return (
-    <div className="flex min-h-screen bg-gray-100">
-      <Sidebar active="rooms" />
+ return (
+  <div className="flex min-h-screen bg-gray-100">
+    <Sidebar active="rooms" />
 
-      <main className="flex-1 p-6 pt-20 md:pt-8">
-        <h1 className="text-3xl font-bold mb-6 text-center">
-          Gestion des Chambres
-        </h1>
+    <main className="flex-1 p-6 pt-20 md:pt-8">
+      <h1 className="text-3xl font-bold mb-6 text-center">
+        Gestion des Chambres
+      </h1>
 
-        <div className="flex justify-end mb-4">
-          <Button onClick={() => openForm()}>+ Ajouter une chambre</Button>
-        </div>
-
-        {loading ? (
-          <p className="text-center">Chargement...</p>
-        ) : (
-          <div className="bg-white rounded-xl shadow overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3">Image</th>
-                  <th className="px-4 py-3">Nom</th>
-                  <th className="px-4 py-3">Slug</th>
-                  <th className="px-4 py-3">Prix</th>
-                  <th className="px-4 py-3">Capacité</th>
-                  <th className="px-4 py-3">Surface (m²)</th>
-                  <th className="px-4 py-3">État</th>
-                  <th className="px-4 py-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rooms.map((room) => (
-                  <tr key={room.id} className="border-t">
-                    <td className="px-4 py-3">
-                      {room.image ? (
-                        <img
-                          src={`http://localhost:3000${room.image}`}
-                          alt={room.name}
-                          className="h-12 w-20 object-cover rounded"
-                        />
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">{room.name}</td>
-                    <td className="px-4 py-3">{room.slug}</td>
-                    <td className="px-4 py-3">{room.price} DT</td>
-                    <td className="px-4 py-3">{room.capacity}</td>
-                    <td className="px-4 py-3">{room.size} m²</td>
-                    <td className="px-4 py-3">
-  {room.is_active === 1 ? (
-    <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-700">
-      Active
-    </span>
-  ) : (
-    <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700">
-      Désactivée
-    </span>
-  )}
-</td>
-
-                    <td className="px-4 py-3 flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openForm(room)}
-                      >
-                        Modifier
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDeleteRoom(room.id)}
-                      >
-                        Supprimer
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* 🔹 FORM */}
-        <Dialog open={formOpen} onOpenChange={setFormOpen}>
-          <DialogContent className="sm:max-w-xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingRoom ? "Modifier la chambre" : "Ajouter une chambre"}
-              </DialogTitle>
-            </DialogHeader>
-
-            <form onSubmit={handleSaveRoom} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Nom *</Label>
-                  <Input
-                    value={nameInput}
-                    onChange={(e) => setNameInput(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label>Slug *</Label>
-                  <Input
-                    value={slugInput}
-                    onChange={(e) => setSlugInput(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Prix *</Label>
-                  <Input
-                    type="number"
-                    value={priceInput}
-                    onChange={(e) => setPriceInput(+e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label>Capacité *</Label>
-                  <Input
-                    type="number"
-                    value={capacityInput}
-                    onChange={(e) => setCapacityInput(+e.target.value)}
-                  />
-                </div>
-              </div>
-              <div>
-    <Label>Surface (m²) *</Label>
-    <Input
-      type="number"
-      value={sizeInput}
-      onChange={(e) => setSizeInput(+e.target.value)}
-      required
-    />
-  </div>
-
-              {/* 🔹 Image actuelle */}
-{editingRoom?.image && (
-  <div>
-    <Label>Image actuelle</Label>
-    <img
-      // ✅ On remplace http://localhost:3000 par ${BACKEND_URL}
-      src={`${BACKEND_URL}${editingRoom.image}`}
-      alt="Image actuelle"
-      className="mt-2 h-32 w-3/4 object-cover rounded-lg border"
-    />
-  </div>
-)}
-
-              <div>
-                <Label>Image</Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) setImageInput(e.target.files[0]);
-                  }}
-                />
-              </div>
-
-              <div>
-                <Label>Description</Label>
-                <Textarea
-                  value={descriptionInput}
-                  onChange={(e) => setDescriptionInput(e.target.value)}
-                />
-              </div>
-
-             {/* 🔹 Galerie */}
-<div className="mt-4">
-  <Label>Galerie</Label>
-  <div className="grid grid-cols-3 gap-2 mt-2">
-    {gallery.map((img) => (
-      <div key={img.id} className="relative">
-        <img
-          // ✅ Remplacement de localhost par ${BACKEND_URL}
-          src={`${BACKEND_URL}${img.url}`}
-          className="w-full h-24 object-cover rounded"
-          alt="Galerie"
-        />
-        <button
-          type="button"
-          className="absolute top-1 right-1 bg-red-500 text-white px-1 rounded hover:bg-red-600 transition-colors"
-          onClick={() => handleDeleteGallery(img.id)}
-        >
-          X
-        </button>
+      <div className="flex justify-end mb-4">
+        <Button onClick={() => openForm()}>+ Ajouter une chambre</Button>
       </div>
-    ))}
+
+      {loading ? (
+        <p className="text-center">Chargement...</p>
+      ) : (
+        <div className="bg-white rounded-xl shadow overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3">Image</th>
+                <th className="px-4 py-3">Nom</th>
+                <th className="px-4 py-3">Slug</th>
+                <th className="px-4 py-3">Prix</th>
+                <th className="px-4 py-3">Capacité</th>
+                <th className="px-4 py-3">Surface (m²)</th>
+                <th className="px-4 py-3">État</th>
+                <th className="px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rooms.map((room) => (
+                <tr key={room.id} className="border-t">
+                  <td className="px-4 py-3">
+                    {room.image ? (
+                      <img
+                        /* ✅ CORRECTION : URL Render au lieu de localhost */
+                        src={`${BACKEND_URL}${room.image}`}
+                        alt={room.name}
+                        className="h-12 w-20 object-cover rounded"
+                      />
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">{room.name}</td>
+                  <td className="px-4 py-3">{room.slug}</td>
+                  <td className="px-4 py-3">{room.price} DT</td>
+                  <td className="px-4 py-3">{room.capacity}</td>
+                  <td className="px-4 py-3">{room.size} m²</td>
+                  <td className="px-4 py-3">
+                    {room.is_active === 1 ? (
+                      <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-700">Active</span>
+                    ) : (
+                      <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-700">Désactivée</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => openForm(room)}>Modifier</Button>
+                    <Button size="sm" variant="destructive" onClick={() => handleDeleteRoom(room.id)}>Supprimer</Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <Dialog open={formOpen} onOpenChange={setFormOpen}>
+        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingRoom ? "Modifier la chambre" : "Ajouter une chambre"}</DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveRoom} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Nom *</Label>
+                <Input value={nameInput} onChange={(e) => setNameInput(e.target.value)} required />
+              </div>
+              <div>
+                <Label>Slug *</Label>
+                <Input value={slugInput} onChange={(e) => setSlugInput(e.target.value)} required />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Prix *</Label>
+                <Input type="number" value={priceInput} onChange={(e) => setPriceInput(+e.target.value)} />
+              </div>
+              <div>
+                <Label>Capacité *</Label>
+                <Input type="number" value={capacityInput} onChange={(e) => setCapacityInput(+e.target.value)} />
+              </div>
+            </div>
+
+            <div>
+              <Label>Surface (m²) *</Label>
+              <Input type="number" value={sizeInput} onChange={(e) => setSizeInput(+e.target.value)} required />
+            </div>
+
+            {editingRoom?.image && (
+              <div>
+                <Label>Image principale actuelle</Label>
+                <img src={`${BACKEND_URL}${editingRoom.image}`} className="mt-2 h-32 w-full object-cover rounded-lg border" />
+              </div>
+            )}
+
+            <div>
+              <Label>Nouvelle Image principale</Label>
+              <Input type="file" accept="image/*" onChange={(e) => { if (e.target.files?.[0]) setImageInput(e.target.files[0]); }} />
+            </div>
+
+            <div>
+              <Label>Description</Label>
+              <Textarea value={descriptionInput} onChange={(e) => setDescriptionInput(e.target.value)} />
+            </div>
+
+            {/* ✅ SECTION GALERIE CORRIGÉE */}
+            <div className="mt-4 border-t pt-4">
+              <Label className="font-bold">Galerie Photos</Label>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {gallery.map((img) => (
+                  <div key={img.id} className="relative group">
+                    <img src={`${BACKEND_URL}${img.url}`} className="w-full h-24 object-cover rounded border" alt="Galerie" />
+                    <button
+                      type="button"
+                      className="absolute top-1 right-1 bg-red-500 text-white w-6 h-6 flex items-center justify-center rounded-full text-xs hover:bg-red-700"
+                      onClick={() => handleDeleteGallery(img.id)}
+                    >
+                      X
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-3 space-y-2">
+                <Input type="file" multiple accept="image/*" onChange={(e) => setNewGalleryFiles(e.target.files)} />
+                <Button type="button" variant="secondary" className="w-full" onClick={handleUploadGallery} disabled={!newGalleryFiles}>
+                  Uploader vers la galerie
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 border-t pt-4">
+              <Label>État de la chambre</Label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={isActiveInput} onChange={(e) => setIsActiveInput(e.target.checked)} className="accent-green-600" />
+                <span className={isActiveInput ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
+                  {isActiveInput ? "Activée" : "Désactivée"}
+                </span>
+              </label>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t">
+              <Button type="button" variant="outline" onClick={() => setFormOpen(false)} className="flex-1">Annuler</Button>
+              <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">Enregistrer la chambre</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </main>
   </div>
-</div>
-
-                <Input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  className="mt-2"
-                  onChange={(e) => setNewGalleryFiles(e.target.files)}
-                />
-
-                <Button onClick={handleUploadGallery} className="mt-2">
-                  Ajouter à la galerie
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-3">
-  <Label>État de la chambre</Label>
-
-  <label className="flex items-center gap-2 cursor-pointer">
-    <input
-      type="checkbox"
-      checked={isActiveInput}
-      onChange={(e) => setIsActiveInput(e.target.checked)}
-      className="accent-green-600"
-    />
-    <span className={isActiveInput ? "text-green-600" : "text-red-600"}>
-      {isActiveInput ? "Activée" : "Désactivée"}
-    </span>
-  </label>
-</div>
-
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setFormOpen(false)}
-                  className="flex-1"
-                >
-                  Annuler
-                </Button>
-                <Button type="submit" className="flex-1">
-                  Enregistrer
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </main>
-    </div>
-  );
+);
 }
