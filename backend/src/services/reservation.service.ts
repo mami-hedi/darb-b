@@ -44,8 +44,8 @@ export const createReservation = async (reservation: Reservation) => {
   const [result]: any = await db.query(
     `INSERT INTO reservations 
      (room_id, name, email, phone, checkin, checkout, message, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
-    [room_id, name, email, phone || null, checkin, checkout, message || null]
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [room_id, name, email, phone || null, checkin, checkout, message || null, 'en attente']
   );
 
   return result.insertId;
