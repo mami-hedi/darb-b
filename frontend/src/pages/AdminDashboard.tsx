@@ -1,236 +1,233 @@
 import { useEffect, useState } from "react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from "recharts";
 import { Sidebar } from "@/components/Sidebar";
 
+const BACKEND_URL = import.meta.env.VITE_API_URL || "https://darb-b.onrender.com";
+
 interface Reservation {
   id: number;
-  client: string;
-  chambre: string;
+  name: string;      // Corrigé (était client)
+  room_id: number;   // Corrigé (était chambre)
   checkin: string;
   checkout: string;
   status: string;
-  price: number;
+  total: number;     // Corrigé (était price)
 }
 
 export function AdminDashboard() {
-  // ----- States des KPI -----
-  const [totalRooms, setTotalRooms] = useState(0);
-  const [occupiedRooms, setOccupiedRooms] = useState(0);
-  const [availableRooms, setAvailableRooms] = useState(0);
-  const [reservationsToday, setReservationsToday] = useState(0);
-  const [upcomingReservations, setUpcomingReservations] = useState(0);
-  const [newClients, setNewClients] = useState(0);
-  const [canceledReservations, setCanceledReservations] = useState(0);
-  const [dailyRevenue, setDailyRevenue] = useState(0);
-  const [roomsReservedToday, setRoomsReservedToday] = useState(0);
-  const [roomsFreeToday, setRoomsFreeToday] = useState(0);
-  const [confirmedReservations, setConfirmedReservations] = useState(0);
-  const [upcomingWeekReservations, setUpcomingWeekReservations] = useState(0);
-
-  const [monthlyRevenueData, setMonthlyRevenueData] = useState<{month: string, revenue: number}[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [totalRooms, setTotalRooms] = useState(0);
+  const [kpis, setKpis] = useState({
+    occupied: 0,
+    available: 0,
+    today: 0,
+    upcoming: 0,
+    canceled: 0,
+    revenue: 0,
+    confirmed: 0
+  });
+  const [monthlyRevenueData, setMonthlyRevenueData] = useState<any[]>([]);
+
+  const fetchData = async () => {
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      // 1. Fetch Chambres
+      const roomsRes = await fetch(`${BACKEND_URL}/api/admin/rooms`);
+      const roomsData = await roomsRes.json();
+      setTotalRooms(roomsData.length);
+      const occupiedCount = roomsData.filter((r: any) => r.status === "occupée").length;
+
+      // 2. Fetch Réservations
+      const resRes = await fetch(`${BACKEND_URL}/api/reservations`);
+      const data: Reservation[] = await resRes.json();
+      setReservations(data);
+
+      // Calcul des KPI
+      const confirmed = data.filter(r => r.status === "confirmed");
+      const revToday = confirmed
+        .filter(r => r.checkin.startsWith(todayStr))
+        .reduce((sum, r) => sum + Number(r.total), 0);
+
+      setKpis({
+        occupied: occupiedCount,
+        available: roomsData.length - occupiedCount,
+        today: data.filter(r => r.checkin.startsWith(todayStr)).length,
+        upcoming: data.filter(r => r.checkin > todayStr).length,
+        canceled: data.filter(r => r.status === "cancelled").length,
+        revenue: revToday,
+        confirmed: confirmed.length
+      });
+
+      // Revenus par mois (Stats)
+      const monthlyData = Array.from({ length: 6 }, (_, i) => {
+        const d = new Date();
+        d.setMonth(d.getMonth() - (5 - i));
+        const monthLabel = d.toLocaleString("fr-FR", { month: "short" });
+        const monthYear = d.getMonth() + "-" + d.getFullYear();
+        
+        const revenue = confirmed
+          .filter(r => {
+            const date = new Date(r.checkin);
+            return (date.getMonth() + "-" + date.getFullYear()) === monthYear;
+          })
+          .reduce((sum, r) => sum + Number(r.total), 0);
+
+        return { month: monthLabel, revenue };
+      });
+      setMonthlyRevenueData(monthlyData);
+
+    } catch (err) {
+      console.error("Erreur chargement dashboard:", err);
+    }
+  };
 
   useEffect(() => {
-    const todayStr = new Date().toISOString().slice(0,10);
-    const next7Days = new Date();
-    next7Days.setDate(next7Days.getDate() + 7);
-    const next7DaysStr = next7Days.toISOString().slice(0,10);
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const firstDayMonth = new Date(new Date().getFullYear(), new Date().getMonth(),1).toISOString().slice(0,10);
-    const lastDayMonth = new Date(new Date().getFullYear(), new Date().getMonth()+1,0).toISOString().slice(0,10);
+    fetchData();
+  }, []);
 
-    // -------- Chambres --------
-    fetch("/api/admin/rooms")
-      .then(res => res.json())
-      .then(data => {
-        setTotalRooms(data.length);
-        const occupied = data.filter((r:any) => r.status === "occupée").length;
-        setOccupiedRooms(occupied);
-        setAvailableRooms(data.length - occupied);
+  const handleStatusUpdate = async (id: number, newStatus: string) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/reservations/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
       });
-
-    // -------- Réservations --------
-    fetch("/api/admin/reservations")
-      .then(res => res.json())
-      .then(data => {
-        setReservations(data);
-
-        // KPI généraux
-        setReservationsToday(data.filter(r => r.checkin === todayStr).length);
-        setUpcomingReservations(data.filter(r => r.checkin > todayStr).length);
-        setCanceledReservations(data.filter(r => r.status === "annulée").length);
-
-        const revenueToday = data
-          .filter(r => r.checkin === todayStr && r.status === "confirmée")
-          .reduce((sum, r) => sum + r.price, 0);
-        setDailyRevenue(revenueToday);
-
-        // Nouveaux KPI
-        const roomsToday = data.filter(r => r.checkin === todayStr).length;
-        setRoomsReservedToday(roomsToday);
-        setRoomsFreeToday(totalRooms - roomsToday);
-        setConfirmedReservations(data.filter(r => r.status === "confirmée").length);
-        setUpcomingWeekReservations(data.filter(r => r.checkin > todayStr && r.checkin <= next7DaysStr).length);
-
-        // Revenus par mois
-        const monthlyData = Array.from({ length: 12 }, (_, i) => {
-          const monthStart = new Date(new Date().getFullYear(), i, 1);
-          const monthEnd = new Date(new Date().getFullYear(), i + 1, 0);
-          
-          const revenue = data
-            .filter(r => {
-              const checkin = new Date(r.checkin);
-              return checkin >= monthStart && checkin <= monthEnd && r.status === "confirmée";
-            })
-            .reduce((sum, r) => sum + r.price, 0);
-
-          return {
-            month: monthStart.toLocaleString("fr-FR", { month: "short" }),
-            revenue,
-          };
-        });
-        setMonthlyRevenueData(monthlyData);
-      });
-
-    // -------- Clients --------
-    fetch("/api/admin/clients")
-      .then(res => res.json())
-      .then(data => {
-        setNewClients(data.filter(c => new Date(c.created_at) >= weekAgo).length);
-      });
-  }, [totalRooms]);
+      if (res.ok) fetchData(); // Rafraîchir les données
+    } catch (err) {
+      alert("Erreur lors de la mise à jour");
+    }
+  };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar active="dashboard" />
 
-      {/* Contenu principal */}
-      <main className="flex-1 p-4 md:p-8 overflow-auto pt-20 md:pt-8">
-        <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+      <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 overflow-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-800">Tableau de Bord</h1>
+          <button onClick={fetchData} className="bg-white p-2 rounded shadow hover:bg-gray-100 transition">🔄 Actualiser</button>
+        </div>
 
-        {/* KPI cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="p-4 bg-blue-100 rounded shadow text-center">
-            <h2 className="text-lg font-semibold">Total Chambres</h2>
-            <p className="text-2xl font-bold">{totalRooms}</p>
-          </div>
-          <div className="p-4 bg-green-100 rounded shadow text-center">
-            <h2 className="text-lg font-semibold">Occupées</h2>
-            <p className="text-2xl font-bold">{occupiedRooms}</p>
-          </div>
-          <div className="p-4 bg-yellow-100 rounded shadow text-center">
-            <h2 className="text-lg font-semibold">Disponibles</h2>
-            <p className="text-2xl font-bold">{availableRooms}</p>
-          </div>
-          <div className="p-4 bg-purple-100 rounded shadow text-center">
-            <h2 className="text-lg font-semibold">Réservations aujourd’hui</h2>
-            <p className="text-2xl font-bold">{reservationsToday}</p>
-          </div>
-
-          <div className="p-4 bg-indigo-100 rounded shadow text-center">
-            <h2 className="text-lg font-semibold">Réservations à venir</h2>
-            <p className="text-2xl font-bold">{upcomingReservations}</p>
-          </div>
-          <div className="p-4 bg-pink-100 rounded shadow text-center">
-            <h2 className="text-lg font-semibold">Nouveaux clients</h2>
-            <p className="text-2xl font-bold">{newClients}</p>
-          </div>
-          <div className="p-4 bg-red-100 rounded shadow text-center">
-            <h2 className="text-lg font-semibold">Annulations</h2>
-            <p className="text-2xl font-bold">{canceledReservations}</p>
-          </div>
-          <div className="p-4 bg-orange-100 rounded shadow text-center">
-            <h2 className="text-lg font-semibold">Revenus du jour</h2>
-            <p className="text-2xl font-bold">{dailyRevenue} €</p>
-          </div>
-
-          {/* Nouveaux KPI */}
-          <div className="p-4 bg-indigo-200 rounded shadow text-center">
-            <h2 className="text-lg font-semibold">Chambres réservées aujourd’hui</h2>
-            <p className="text-2xl font-bold">{roomsReservedToday}</p>
-          </div>
-          <div className="p-4 bg-lime-200 rounded shadow text-center">
-            <h2 className="text-lg font-semibold">Chambres libres aujourd’hui</h2>
-            <p className="text-2xl font-bold">{roomsFreeToday}</p>
-          </div>
-          <div className="p-4 bg-cyan-200 rounded shadow text-center">
-            <h2 className="text-lg font-semibold">Réservations confirmées</h2>
-            <p className="text-2xl font-bold">{confirmedReservations}</p>
-          </div>
-          <div className="p-4 bg-green-200 rounded shadow text-center">
-            <h2 className="text-lg font-semibold">Réservations à venir 7 jours</h2>
-            <p className="text-2xl font-bold">{upcomingWeekReservations}</p>
-          </div>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <StatCard title="Total Chambres" value={totalRooms} color="bg-blue-500" />
+          <StatCard title="Occupées" value={kpis.occupied} color="bg-orange-500" />
+          <StatCard title="Revenus Jour" value={`${kpis.revenue} DT`} color="bg-green-600" />
+          <StatCard title="Confirmées" value={kpis.confirmed} color="bg-indigo-600" />
         </div>
 
         {/* Graphiques */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="p-4 bg-white rounded shadow">
-            <h2 className="text-xl font-semibold mb-4">Revenus par mois</h2>
-            <BarChart
-              width={500}
-              height={300}
-              data={monthlyRevenueData}
-              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-              barSize={30}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip formatter={(value: number) => `${value} €`} />
-              <Legend />
-              <Bar dataKey="revenue" fill="#82ca9d" />
-            </BarChart>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h2 className="text-lg font-semibold mb-4">Revenus Mensuels (DT)</h2>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyRevenueData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip cursor={{fill: '#f3f4f6'}} />
+                  <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
-          <div className="p-4 bg-white rounded shadow">
-            <h2 className="text-xl font-semibold mb-4">Réservations par statut</h2>
-            <BarChart width={400} height={300} data={reservations}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="status" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="id" fill="#8884d8" />
-            </BarChart>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h2 className="text-lg font-semibold mb-4">Aperçu Rapide</h2>
+            <div className="space-y-4">
+              <QuickInfo label="Arrivées aujourd'hui" value={kpis.today} />
+              <QuickInfo label="Réservations à venir" value={kpis.upcoming} />
+              <QuickInfo label="Annulations" value={kpis.canceled} />
+              <QuickInfo label="Chambres Libres" value={kpis.available} />
+            </div>
           </div>
         </div>
 
         {/* Tableau des réservations */}
-        <div className="p-4 bg-white rounded shadow">
-          <h2 className="text-xl font-semibold mb-4">Réservations récentes</h2>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="text-lg font-semibold">Dernières Réservations</h2>
+          </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left">
               <thead>
-                <tr className="bg-gray-200">
-                  <th className="px-4 py-2 border">Client</th>
-                  <th className="px-4 py-2 border">Chambre</th>
-                  <th className="px-4 py-2 border">Check-in</th>
-                  <th className="px-4 py-2 border">Check-out</th>
-                  <th className="px-4 py-2 border">Statut</th>
-                  <th className="px-4 py-2 border">Prix</th>
+                <tr className="bg-gray-50 text-gray-500 text-sm uppercase">
+                  <th className="px-6 py-4 font-medium">Client</th>
+                  <th className="px-6 py-4 font-medium">Dates</th>
+                  <th className="px-6 py-4 font-medium">Total</th>
+                  <th className="px-6 py-4 font-medium">Statut</th>
+                  <th className="px-6 py-4 font-medium text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                {reservations.map(res => (
-                  <tr key={res.id} className="odd:bg-gray-50">
-                    <td className="px-4 py-2 border">{res.client}</td>
-                    <td className="px-4 py-2 border">{res.chambre}</td>
-                    <td className="px-4 py-2 border">{res.checkin}</td>
-                    <td className="px-4 py-2 border">{res.checkout}</td>
-                    <td className="px-4 py-2 border">{res.status}</td>
-                    <td className="px-4 py-2 border">{res.price} €</td>
+              <tbody className="divide-y divide-gray-100">
+                {reservations.slice(0, 10).map(res => (
+                  <tr key={res.id} className="hover:bg-gray-50 transition">
+                    <td className="px-6 py-4 font-medium text-gray-900">{res.name}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {new Date(res.checkin).toLocaleDateString('fr-FR')} → {new Date(res.checkout).toLocaleDateString('fr-FR')}
+                    </td>
+                    <td className="px-6 py-4 font-semibold text-gray-700">{res.total} DT</td>
+                    <td className="px-6 py-4">
+                      <StatusBadge status={res.status} />
+                    </td>
+                    <td className="px-6 py-4 text-right space-x-2">
+                      {res.status === 'pending' && (
+                        <button 
+                          onClick={() => handleStatusUpdate(res.id, 'confirmed')}
+                          className="text-xs bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                        >
+                          Confirmer
+                        </button>
+                      )}
+                      {res.status !== 'cancelled' && (
+                        <button 
+                          onClick={() => handleStatusUpdate(res.id, 'cancelled')}
+                          className="text-xs bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300"
+                        >
+                          Annuler
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-
       </main>
     </div>
   );
+}
+
+// Composants utilitaires locaux
+function StatCard({ title, value, color }: any) {
+  return (
+    <div className={`${color} p-6 rounded-xl shadow-sm text-white`}>
+      <p className="text-sm opacity-80 mb-1 uppercase font-bold">{title}</p>
+      <p className="text-3xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+function QuickInfo({ label, value }: any) {
+  return (
+    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+      <span className="text-gray-600">{label}</span>
+      <span className="font-bold text-gray-800">{value}</span>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const configs: any = {
+    pending: { label: 'En attente', class: 'bg-yellow-100 text-yellow-700' },
+    confirmed: { label: 'Confirmée', class: 'bg-green-100 text-green-700' },
+    cancelled: { label: 'Annulée', class: 'bg-red-100 text-red-700' }
+  };
+  const config = configs[status] || configs.pending;
+  return <span className={`px-3 py-1 rounded-full text-xs font-bold ${config.class}`}>{config.label}</span>;
 }
