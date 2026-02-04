@@ -159,6 +159,23 @@ export function AdminReservations() {
     (r.name.toLowerCase().includes(searchQuery.toLowerCase()) || r.room_name.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+  // À ajouter dans AdminReservations.tsx
+const location = useLocation();
+
+useEffect(() => {
+  if (location.state?.openModal) {
+    // On récupère les données envoyées par AdminAvailability
+    setFormData({
+      ...formData,
+      room_id: location.state.room_id,
+      checkin: location.state.checkin,
+      checkout: location.state.checkout,
+      status: "confirmed" // On peut pré-remplir le statut
+    });
+    setFormOpen(true); // On ouvre la modal automatiquement
+  }
+}, [location.state]);
+
   return (
     <div className="flex min-h-screen bg-gray-50 font-sans">
       <Sidebar active="reservations" />
