@@ -1,28 +1,38 @@
 import { db } from "../db";
 import { Reservation } from "../types";
 
-// 🔹 Récupérer toutes les réservations pour admin avec total et nights
+
+// 🔹 Récupérer TOUTES les réservations (Correction du JOIN pour ne perdre aucune ligne)
 export const getAdminReservations = async () => {
   const [rows]: any = await db.query(`
-    SELECT r.*, rm.name AS room_name, rm.price
+    SELECT 
+      r.*, 
+      IFNULL(rm.name, 'Chambre supprimée') AS room_name, 
+      IFNULL(rm.price, 0) AS room_unit_price
     FROM reservations r
-    JOIN rooms rm ON r.room_id = rm.id
-    ORDER BY r.checkin ASC
+    LEFT JOIN rooms rm ON r.room_id = rm.id
+    ORDER BY r.created_at DESC
   `);
 
   return rows.map((r: any) => {
+    // Si nights ou total sont déjà stockés en base, on les utilise, 
+    // sinon on les calcule pour éviter les valeurs vides à l'affichage.
     const checkinDate = new Date(r.checkin);
     const checkoutDate = new Date(r.checkout);
-    const nights = Math.max(
-      0,
+    
+    const calculatedNights = Math.max(
+      1,
       Math.ceil((checkoutDate.getTime() - checkinDate.getTime()) / (1000 * 60 * 60 * 24))
     );
-    const total = nights * Number(r.price || 0);
+    
+    // Priorité à la donnée en base (r.total), sinon calcul dynamique
+    const finalNights = r.nights || calculatedNights;
+    const finalTotal = r.total || (finalNights * Number(r.room_unit_price || 0));
 
     return {
       ...r,
-      nights,
-      total,
+      nights: finalNights,
+      total: finalTotal,
     };
   });
 };
