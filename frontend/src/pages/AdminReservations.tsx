@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -38,6 +39,9 @@ interface Room {
 
 export function AdminReservations() {
   const { toast } = useToast();
+  // À ajouter dans AdminReservations.tsx
+const location = useLocation();
+const navigate = useNavigate(); // Ajoute ceci si tu en as besoin
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
@@ -159,8 +163,7 @@ export function AdminReservations() {
     (r.name.toLowerCase().includes(searchQuery.toLowerCase()) || r.room_name.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // À ajouter dans AdminReservations.tsx
-const location = useLocation();
+  
 
 useEffect(() => {
   if (location.state?.openModal) {
