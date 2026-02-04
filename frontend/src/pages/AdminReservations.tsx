@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { io } from "socket.io-client";
-import { FaEdit, FaTrash, FaCalendarAlt, Fa MoneyBillWave, FaUser } from "react-icons/fa";
+import { FaEdit, FaTrash, FaCalendarAlt, FaMoneyBillWave, FaUser } from "react-icons/fa";
 import { Sidebar } from "@/components/Sidebar";
 import { AdminNotifications } from "@/components/AdminNotifications";
 import { PhoneField } from "@/components/PhoneField";
