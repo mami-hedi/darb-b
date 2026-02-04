@@ -59,6 +59,12 @@ export function AdminReservations() {
     advance_amount: 0,
   });
 
+  const statusConfig = {
+  confirmed: { label: "Confirmé", class: "bg-green-100 text-green-700 border-green-200" },
+  pending: { label: "En attente", class: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+  cancelled: { label: "Annulé", class: "bg-red-100 text-red-700 border-red-200" },
+};
+
   const fetchReservations = async () => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/admin/reservations`);
@@ -161,7 +167,7 @@ export function AdminReservations() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Tableau de Bord</h1>
-            <p className="text-gray-500">Gérez vos réservations et clients</p>
+            <p className="text-gray-500">Gérez vos réservations </p>
           </div>
           <AdminNotifications />
         </div>
@@ -193,15 +199,7 @@ export function AdminReservations() {
               {reservations.filter(r => r.status === 'pending').length}
             </p>
           </div>
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400 text-sm font-medium">Chiffre Affaire</span>
-              <FaMoneyBillWave className="text-indigo-500" />
-            </div>
-            <p className="text-2xl font-bold mt-2 text-indigo-700">
-              {reservations.reduce((acc, curr) => acc + (curr.status !== 'cancelled' ? curr.total : 0), 0)} DT
-            </p>
-          </div>
+          
         </div>
 
         {/* BARRE DE CONTRÔLE */}
@@ -239,6 +237,7 @@ export function AdminReservations() {
                   <th className="p-4">Hébergement</th>
                   <th className="p-4 text-center">Dates</th>
                   <th className="p-4 text-center">Paiement</th>
+                  <th className="p-4 text-center">Statut</th>
                   <th className="p-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -268,6 +267,16 @@ export function AdminReservations() {
                         {r.payment_status === 'partial' ? `Avance: ${r.advance_amount}DT` : r.payment_status}
                       </div>
                     </td>
+
+                    <td className="p-4 text-center">
+  {/* On récupère la config selon le statut de la réservation r.status */}
+  <span className={`px-3 py-1.5 rounded-full text-[11px] font-bold border ${
+    statusConfig[r.status as keyof typeof statusConfig]?.class || "bg-gray-100 text-gray-600"
+  }`}>
+    {statusConfig[r.status as keyof typeof statusConfig]?.label || r.status}
+  </span>
+</td>
+
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button onClick={() => openForm(r)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"><FaEdit /></button>
